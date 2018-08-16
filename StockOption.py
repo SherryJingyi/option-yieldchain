@@ -13,7 +13,7 @@ ONE_DAY = relativedelta(days= 1)
 ANNUAL_TRADING_DAY = 252
 SELL_COMIT = 0.00125
 BUY_COMIT = 0.00025
-COMIT_LIMIT = 5
+COMIT_LIMIT = 3
 SLIPPAGE = 0.0008
 YYYYMMDD = "%Y%m%d"
 Y_M_D_H_M_S = "%Y-%m-%d %H:%M:%S"
@@ -31,8 +31,6 @@ class Stock(object):
     """""
     def __init__(self, price_df, stock_id, minute = False):
         self.price_df = price_df.set_index(['Time']).sort_index()
-        # change when using intraday data
-        # self.trade_date = [x.date() for x in self.price_df.index]
         self.trade_time = [x for x in self.price_df.index]
         self.stock_id = stock_id
         self.stock_hold = 0
@@ -131,8 +129,7 @@ class CallOption(Stock):
         self.__delta = N_d1
         N_d2 = norm.cdf(self.__d2)
         self.__c = self.price_df.loc[time,'Price']*N_d1 - self.strike*np.exp(-R_F*self.__T)*N_d2
-        # print(self.now)
-        # print("Delta", self.__delta)
+
 
 
     def write_call(self, covered_value=None,option_num=None,option_return = None):
@@ -293,18 +290,11 @@ def result(total_delta = False, dev = None, hold = None, minute = False):
                 time_l.append(x.date())
         time_list = pd.Series(time_list)
     stock_list = data_df['Stock'].unique().tolist()
-    # stock_list = ['300431.SZ']
-    # stock_list = ['000423.SZ']
-    # stock_list = ['600160.SH']
-    # stock_list = ['002393.SZ']
-    # stock_list = ['002088.SZ']
-    # stock_list = ['600897.SH']
     stock_list.sort()
     option_dict = {}
 
     stock_num = len(stock_list)
     for time in time_list[0:stock_num]:
-        # print ('Time: ', time)
 
         stock = stock_list.pop(0)
         print ('Stock: ', stock)
@@ -331,7 +321,7 @@ def result(total_delta = False, dev = None, hold = None, minute = False):
             option = create_call_option((option.expir + ONE_DAY), stock_df, stock, minute)
 
             option_dict[(option.stock_id, option.expir)] = []
-            print('Option expir: ', option.expir)
+            # print('Option expir: ', option.expir)
             time_index = []
             Re_list = []
             is_first_time = True
@@ -346,7 +336,7 @@ def result(total_delta = False, dev = None, hold = None, minute = False):
             option_dict[(option.stock_id, option.expir)] = pd.Series(Re_list, index=time_index)
     return option_dict
 
-
+# unit tests
 def test():
     file_address = 'D:/file/SUMMER2018/yieldchain/stock_sim_data.csv'
     data_df = pd.read_csv(file_address, header=None)
@@ -403,6 +393,7 @@ def clean_option_dict(option_dict,total_delta=False,dev=None, hold = None, minut
         # stock_df.to_csv(file_name)
         temp_df = stock_df.sum(axis=1)
         if minute:
+            # file-name is the folder to store the result
             file_name =  'C:/Users/Sherry/PycharmProjects/option_hedge_obo/option-yieldchain/minute_data/' +file_name
         temp_df.to_csv(file_name)
 
